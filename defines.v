@@ -35,3 +35,4 @@
 `define JMP_OPCODE 5'b11101
 
 `define RST_ENABLE 1'b1
+`define ZERO16 16'b0000_0000_0000_0000
