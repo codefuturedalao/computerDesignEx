@@ -14,16 +14,19 @@ module CPU(
 );
 	wire[`INST_ADDR_LENGTH-1 : 0] PC_i;
 	wire pcNewFlag;
+	wire[5:0] stall;
 	PC myPC(
 		.clk_i(clk_i),.rst_i(rst_i),.PC_i(PC_i),.pcNewFlag_i(pcNewFlag),
+		.stall_i(stall),
 
 		.PC_o(PC_o)
 	);
-
+	wire flush;
 	wire[`INST_BUS_LENGTH-1 : 0] id_inst;
 	wire[`INST_ADDR_LENGTH-1 : 0] id_PC;   
 	IF_ID myIf_id(
 		.clk_i(clk_i),.rst_i(rst_i),.if_inst_i(inst_i),.if_PC_i(PC_o),
+		.stall_i(stall),.flush_i(flush),
 
 		.id_inst_o(id_inst),.id_PC_o(id_PC)
 	);
@@ -37,6 +40,8 @@ module CPU(
 	wire branch_o;
 	wire regWrite_o;
 	wire resultOrMem_o;
+	wire reg1Read_o;
+	wire reg2Read_o;
 	wire id_memRead;
 	wire id_memWrite;
 	wire[4:0] aluOp_o;
@@ -45,7 +50,8 @@ module CPU(
 
 		.reg1_o(reg1_o),.reg2_o(reg2_o),.reg3_o(reg3_o),.inst_o(inst_o),
 		.jump_o(jump_o),.immOrReg_o(immOrReg_o),.branch_o(branch_o),.regWrite_o(regWrite_o),
-		.resultOrMem_o(resultOrMem_o),.memRead_o(id_memRead),.memWrite_o(id_memWrite)
+		.resultOrMem_o(resultOrMem_o),.memRead_o(id_memRead),.memWrite_o(id_memWrite),
+		.reg1Read_o(reg1Read_o),.reg2Read_o(reg2Read_o)
 	);
 
 	wire[`REG_LENGTH_IN_INST-1 : 0] wb_reg3;
@@ -56,6 +62,7 @@ module CPU(
 	RG myRG(
 		.clk_i(clk_i),.reg1_i(reg1_o),.reg2_i(reg2_o),.reg3_i(wb_reg3),
 		.data3_i(data3_i),.regWrite_i(wb_regWrite),
+		.reg1Read_i(reg1Read_o),.reg2Read_i(reg2Read_o),
 
 		.data1_o(data1_o),.data2_o(data2_o)
 	);
@@ -75,19 +82,34 @@ module CPU(
 		.clk_i(clk_i),.rst_i(rst_i),.id_PC_i(id_PC),.id_data1_i(data1_o),
 		.id_data2_i(data2_o),.id_reg3_i(reg3_o),.id_inst_i(inst_o),.id_jump_i(jump_o),
 		.id_immOrReg_i(immOrReg_o),.id_branch_i(branch_o),.id_resultOrMem_i(resultOrMem_o),
-		.id_memRead_i(memRead_o),.id_memWrite_i(memWrite_o),.id_regWrite_i(regWrite_o),
+		.id_memRead_i(id_memRead),.id_memWrite_i(id_memWrite),.id_regWrite_i(regWrite_o),
+		.stall_i(stall),.flush_i(flush),
 
 		.ex_PC_o(ex_PC),.ex_data1_o(ex_data1),.ex_data2_o(ex_data2),.ex_reg3_o(ex_reg3),
 		.ex_inst_o(ex_inst),.ex_jump_o(ex_jump),.ex_branch_o(ex_branch),.ex_resultOrMem_o(ex_resultOrMem),
 		.ex_immOrReg_o(ex_immOrReg),.ex_memRead_o(ex_memRead),.ex_memWrite_o(ex_memWrite),.ex_regWrite_o(ex_regWrite)
 	);
+	STALL_UNIT myStall_unit(
+		.ex_memRead_i(ex_memRead),.ex_reg3_i(ex_reg3),.id_reg1_i(reg1_o),.id_reg2_i(reg2_o),
+		.id_reg1Read_i(reg1Read_o),.id_reg2Read_i(reg1Read_o),
 
+		.stall_o(stall)
+	);
+	wire[1:0] forwardA;
+	wire[1:0] forwardB;
+	wire[`INST_BUS_LENGTH-1 : 0] aluData1;
+	wire[`INST_BUS_LENGTH-1 : 0] aluData2;
 	wire[`REG_BUS_LENGTH-1 : 0] result_o;
 	wire flag_o;
 	ALU myALU(
-		.data1_i(ex_data1),.data2_i(ex_data2),.imm_i(ex_inst[7:0]),.aluOp_i(ex_inst[15:11]),
+		.data1_i(aluData1),.data2_i(aluData2),.imm_i(ex_inst[7:0]),.aluOp_i(ex_inst[15:11]),
 		
 		.result_o(result_o),.flag_o(flag_o)
+	);
+	CONTROL_HAZARD_UNIT myCHU(
+		.flag_i(flag_o),.branch_i(ex_branch),.jump_i(ex_jump),
+
+		.flush_o(flush)
 	);
 	wire[`REG_BUS_LENGTH-1 : 0] mem_data1;
 	wire[`REG_BUS_LENGTH-1 : 0] mem_aluResult;
@@ -101,9 +123,10 @@ module CPU(
 	assign memAddr_o = mem_aluResult;
 	assign memData_o = mem_data1;
 	EX_MEM myEx_mem(
-		.clk_i(clk_i),.rst_i(rst_i),.ex_data1_i(ex_data1),.ex_aluResult_i(result_o),
+		.clk_i(clk_i),.rst_i(rst_i),.ex_data1_i(aluData1),.ex_aluResult_i(result_o),
 		.ex_reg3_i(ex_reg3),.ex_resultOrMem_i(ex_resultOrMem),.ex_memRead_i(ex_memRead),.ex_memWrite_i(ex_memWrite),
 		.ex_regWrite_i(ex_regWrite),
+		.stall_i(stall),
 	
 		.mem_data1_o(mem_data1),.mem_aluResult_o(mem_aluResult),.mem_reg3_o(mem_reg3),
 		.mem_resultOrMem_o(mem_resultOrMem),.mem_memRead_o(mem_memRead),.mem_memWrite_o(mem_memWrite),
@@ -115,6 +138,7 @@ module CPU(
 	ME_WB myMe_wb(
 		.clk_i(clk_i),.rst_i(rst_i),.mem_memData_i(memData_i),.mem_aluResult_i(mem_aluResult),
 		.mem_reg3_i(mem_reg3),.mem_resultOrMem_i(mem_resultOrMem),.mem_regWrite_i(mem_regWrite),
+		.stall_i(stall),
 
 		.wb_memData_o(wb_memData),.wb_aluResult_o(wb_aluResult),.wb_reg3_o(wb_reg3),.wb_resultOrMem_o(wb_resultOrMem),
 		.wb_regWrite_o(wb_regWrite)
@@ -135,15 +159,27 @@ module CPU(
 
 	wire[`INST_ADDR_LENGTH-1:0] jumpPc;
 	MUX3 myMUX3(
-		.immOrReg_i(ex_immOrReg),.offset11_i(ex_inst[10:0]),.reg1_i(ex_data1),.PC_i(ex_PC),
+		.immOrReg_i(ex_immOrReg),.offset11_i(ex_inst[10:0]),.reg1_i(aluData1),.PC_i(ex_PC),
 
 		.pcJump_o(jumpPc)
 	);	
+	MUX4 myMux4(
+		.forwardA_i(forwardA),.forwardB_i(forwardB),.ex_mem_aluResult_i(mem_aluResult),
+		.mem_wb_regWData_i(data3_i),.regdata1_i(ex_data1),.regdata2_i(ex_data2),
+
+		.data1_o(aluData1),.data2_o(aluData2)
+	);
 
 	MUX2 myMUX2(
 		.jump_i(ex_jump),.pcJump_i(jumpPc),
 		.flag_i(flag_o),.branch_i(ex_branch),.offset5_i(ex_inst[4:0]),.PC_i(ex_PC),
 
 		.PC_o(PC_i),.pcNewFlag_o(pcNewFlag)
+	);
+	DATA_HAZARD_CONTROL myDHC(
+		.ex_mem_regWrite_i(mem_regWrite),.ex_mem_reg3_i(mem_reg3),.mem_wb_regWrite_i(wb_regWrite),
+		.mem_wb_reg3_i(wb_reg3),.id_ex_rs(ex_inst[10:8]),.id_ex_rt(ex_inst[7:5]),
+
+		.forwardA_o(forwardA),.forwardB_o(forwardB)
 	);
 endmodule

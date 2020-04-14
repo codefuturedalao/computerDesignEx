@@ -11,6 +11,8 @@ module Decoder(
 	output reg immOrReg_o,
 	output reg branch_o,
 	output reg regWrite_o,
+	output reg reg1Read_o,
+	output reg reg2Read_o,
 	output reg resultOrMem_o,
 	output reg memRead_o,
 	output reg memWrite_o
@@ -26,11 +28,15 @@ module Decoder(
 			immOrReg_o <= 1'b0;
 			branch_o <= 1'b0;
 			regWrite_o <=  1'b0;
+			reg1Read_o <= 1'b1;
+			reg2Read_o <= 1'b1;
 			resultOrMem_o <= 1'b1;
 			memWrite_o <= 1'b0;
 			memRead_o <= 1'b0;
 			case(opCode) 
 				`NOP_OPCODE : begin
+					reg1Read_o <= 1'b0;
+					reg2Read_o <= 1'b0;
 				end
 				`ADD_OPCODE : begin
 					regWrite_o <= 1'b1;
@@ -48,9 +54,11 @@ module Decoder(
 					regWrite_o <= 1'b1;
 				end
 				`INC_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`DEC_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`AND_OPCODE : begin
@@ -63,32 +71,41 @@ module Decoder(
 					regWrite_o <= 1'b1;
 				end
 				`NOT_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`SLL_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`SAL_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`SLR_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`SAR_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`MOV_OPCODE : begin
 					regWrite_o <= 1'b1;
 				end
 				`MOVI_OPCODE : begin
+					reg1Read_o <= 1'b0;
+					reg2Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 				end
 				`LOD_OPCODE : begin
+					reg1Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 					resultOrMem_o <= 1'b0;
 					memRead_o <= 1'b1;
 				end
 				`LODI_OPCODE : begin
+					reg1Read_o <= 1'b0;
 					regWrite_o <= 1'b1;
 					resultOrMem_o <= 1'b0;
 					memRead_o <= 1'b1;
@@ -118,10 +135,13 @@ module Decoder(
 					branch_o <= 1'b1;
 				end
 				`JMPI_OPCODE: begin
+					reg1Read_o <= 1'b0;
+					reg2Read_o <= 1'b0;
 					jump_o <= 1'b1;
 					immOrReg_o <= 1'b1;
 				end
 				`JMP_OPCODE : begin
+					reg2Read_o <= 1'b0;
 					jump_o <= 1'b1;
 					immOrReg_o <= 1'b0;
 				end

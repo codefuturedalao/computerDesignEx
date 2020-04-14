@@ -3,7 +3,7 @@ module IMEM(
 	input wire[`INST_ADDR_LENGTH-1 : 0] PC_i,
 	output wire[`INST_BUS_LENGTH-1 : 0] inst_o
 );
-	wire[`INST_BUS_LENGTH-1:0] ROM[35:0];
+	wire[`INST_BUS_LENGTH-1:0] ROM[37:0];
 	assign inst_o = ROM[PC_i];
 
 	assign ROM[0] = 16'b10001_000_000_00000;  //mov $r0,0
@@ -31,7 +31,7 @@ module IMEM(
 	assign ROM[21] = 16'b10011_010_000_00001; //lodi r2,1	$r2:mem[1] = 2
 	
 	assign ROM[22] = 16'b10110_001_010_00010; //jeq r1,r2,2 PC = 24;
-	assign ROM[23] = 16'b00000_000_000_00000; //nop
+	assign ROM[23] = 16'b10001_100_000_00101;  //mov $r4,5
 	assign ROM[24] = 16'b10111_010_011_00010; //jne r2,r3,2 PC = 26;
 	assign ROM[25] = 16'b00000_000_000_00000; //nop
 	assign ROM[26] = 16'b10001_001_111_11111; //movi r1,-1	
@@ -42,8 +42,10 @@ module IMEM(
 	assign ROM[31] = 16'b11011_010_001_00010; //jlu 2,2^16-1 Pc = 33
 	assign ROM[32] = 16'b00000_000_000_00000; //nop
 	assign ROM[33] = 16'b11100_000_000_00010; //jmpi 2; PC = 35
-	assign ROM[34] = 16'b00000_000_000_00000; //nop
+	assign ROM[34] = 16'b00110_010_000_00000; //nop
 	assign ROM[35] = 16'b11101_001_000_00000; //jmp $r1 PC = 34
+	assign ROM[36] = 16'b00110_010_000_00000; //nop
+	assign ROM[37] = 16'b00110_010_000_00000; //nop
 
 endmodule    
                             

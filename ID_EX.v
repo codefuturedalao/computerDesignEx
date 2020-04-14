@@ -15,6 +15,8 @@ module ID_EX(
 	input wire id_memRead_i,
 	input wire id_memWrite_i,
 	input wire id_regWrite_i,
+	input wire[5:0]stall_i,
+	input wire flush_i,
 
 	output reg[`INST_ADDR_LENGTH-1 : 0] ex_PC_o,
 	output reg[`INST_BUS_LENGTH-1 : 0] ex_data1_o,
@@ -33,6 +35,36 @@ module ID_EX(
 	always
 		@(posedge clk_i) begin
 			if(rst_i == `RST_ENABLE) begin
+				ex_PC_o <= `ZERO16;
+				ex_data1_o <= `ZERO16;
+				ex_data2_o <= `ZERO16;
+				ex_reg3_o <= 3'b000;
+				ex_inst_o <= `ZERO16;
+				ex_jump_o <= 1'b0;
+				ex_immOrReg_o <= 1'b0;
+				ex_branch_o <= 1'b0;
+				ex_resultOrMem_o <= 1'b0;
+				ex_memRead_o <= 1'b0;
+				ex_memWrite_o <= 1'b0;
+				ex_regWrite_o <= 1'b0;
+			end
+			else if(flush_i == 1'b1) begin
+				ex_PC_o <= `ZERO16;
+				ex_data1_o <= `ZERO16;
+				ex_data2_o <= `ZERO16;
+				ex_reg3_o <= 3'b000;
+				ex_inst_o <= `ZERO16;
+				ex_jump_o <= 1'b0;
+				ex_immOrReg_o <= 1'b0;
+				ex_branch_o <= 1'b0;
+				ex_resultOrMem_o <= 1'b0;
+				ex_memRead_o <= 1'b0;
+				ex_memWrite_o <= 1'b0;
+				ex_regWrite_o <= 1'b0;
+			end
+			else if(stall_i[3] == 1'b1 && stall_i[2] == 1'b1) begin
+			end
+			else if(stall_i[3] == 1'b1 && stall_i[2] == 1'b0) begin
 				ex_PC_o <= `ZERO16;
 				ex_data1_o <= `ZERO16;
 				ex_data2_o <= `ZERO16;

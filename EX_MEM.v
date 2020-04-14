@@ -10,6 +10,7 @@ module EX_MEM(
 	input wire ex_memRead_i,
 	input wire ex_memWrite_i,
 	input wire ex_regWrite_i,
+	input wire[5:0]stall_i,
 
 	output reg[`REG_BUS_LENGTH-1 : 0] mem_data1_o,
 	output reg[`REG_BUS_LENGTH-1 : 0] mem_aluResult_o,
@@ -23,6 +24,17 @@ module EX_MEM(
 	always
 		@(posedge clk_i) begin
 			if(rst_i == `RST_ENABLE) begin
+				mem_data1_o <= `ZERO16;
+				mem_aluResult_o <= `ZERO16;
+				mem_reg3_o <= 3'b000;
+				mem_resultOrMem_o <= 1'b0;
+				mem_memRead_o <= 1'b0;
+				mem_memWrite_o <= 1'b0;
+				mem_regWrite_o <= 1'b0;
+			end 
+			else if(stall_i[2] == 1'b1 && stall_i[1] == 1'b1) begin
+			end
+			else if(stall_i[2] == 1'b1 && stall_i[1] == 1'b0) begin
 				mem_data1_o <= `ZERO16;
 				mem_aluResult_o <= `ZERO16;
 				mem_reg3_o <= 3'b000;

@@ -8,6 +8,7 @@ module ME_WB(
 	input wire[`REG_BUS_LENGTH-1 : 0] mem_aluResult_i,
 	input wire[`REG_LENGTH_IN_INST-1 : 0] mem_reg3_i,
 	input wire mem_regWrite_i,
+	input wire[5:0]stall_i,
 
 	output reg[`REG_BUS_LENGTH-1 : 0] wb_memData_o,
 	output reg[`REG_BUS_LENGTH-1 : 0] wb_aluResult_o,
@@ -18,6 +19,15 @@ module ME_WB(
 	always
 		@(posedge clk_i) begin
 			if(rst_i == `RST_ENABLE) begin
+				wb_memData_o <= `ZERO16;
+				wb_aluResult_o <= `ZERO16;
+				wb_reg3_o <= 3'b000;
+				wb_resultOrMem_o <= 1'b0;
+				wb_regWrite_o <= 1'b0;
+			end
+			else if(stall_i[1] == 1'b1 && stall_i[0] == 1'b1) begin
+			end
+			else if(stall_i[1] == 1'b1 && stall_i[0] == 1'b0) begin
 				wb_memData_o <= `ZERO16;
 				wb_aluResult_o <= `ZERO16;
 				wb_reg3_o <= 3'b000;
