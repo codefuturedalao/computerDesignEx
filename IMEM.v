@@ -42,10 +42,10 @@ module IMEM(
 	assign ROM[31] = 16'b11011_010_001_00010; //jlu 2,2^16-1 Pc = 33
 	assign ROM[32] = 16'b00000_000_000_00000; //nop
 	assign ROM[33] = 16'b11100_000_000_00010; //jmpi 2; PC = 35
-	assign ROM[34] = 16'b00110_010_000_00000; //nop
+	assign ROM[34] = 16'b00000_000_000_00000; //nop
 	assign ROM[35] = 16'b11101_001_000_00000; //jmp $r1 PC = 34
-	assign ROM[36] = 16'b00110_010_000_00000; //nop
-	assign ROM[37] = 16'b00110_010_000_00000; //nop
+	assign ROM[36] = 16'b00110_010_000_00000; //inc $r2
+	assign ROM[37] = 16'b00000_000_000_00000; //nop
 
 endmodule    
                             
